@@ -1,9 +1,10 @@
-package soap
+package eyefi
 
 import (
 	"encoding/xml"
 	"bytes"
 	"fmt"
+	"io"
 )
 
 type SoapStartSession struct {
@@ -19,6 +20,7 @@ type SoapStartSessionResponse struct {
 	TransferMode          string `xml:"transfermode"`
 	TransferModeTimestamp string `xml:"transfermodetimestamp"`
 	UpSyncAllowed string `xml:"upsyncallowed"`
+	XMLName xml.Name
 }
 
 type SoapFault struct {
@@ -27,7 +29,7 @@ type SoapFault struct {
 }
 
 type SoapBody struct {
-	Fault           SoapFault
+	Fault           *SoapFault
 	//possible bodies
 	StartSession    *SoapStartSession
 	StartSessionResponse *SoapStartSessionResponse
@@ -45,10 +47,18 @@ func ParseSoap(s string) SoapBody {
 	return envelope.Body
 }
 
-func CreateSoap(body SoapBody) SoapEnvelope {
-	return SoapEnvelope{
+func CreateSoap(body SoapBody) string {
+	buffer := bytes.NewBuffer(make([]byte, 0))
+	WriteSoap(body, buffer)
+	return string(buffer.Bytes())
+}
+
+func WriteSoap(body SoapBody, writer io.Writer) {
+	encoder := xml.NewEncoder(writer)
+	writer.Write([]byte(xml.Header))
+	encoder.Encode(SoapEnvelope{
 		Body: body,
 		XMLName: xml.Name{
 			Space:"http://schemas.xmlsoap.org/soap/envelope/",
-			Local:"Envelope"}}
+			Local:"Envelope"}})
 }

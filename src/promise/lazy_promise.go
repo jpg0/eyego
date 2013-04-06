@@ -9,6 +9,7 @@ func NewLazyPromise(f func () interface {}) *LazyPromise {
 }
 
 func (p *LazyPromise) Get() {
+	//todo: cache
 	p.f()
 }
 
