@@ -23,7 +23,7 @@ func AddCardConfigs(configs []CardConfig) {
 
 func GenerateSNonce() string {
 	src := rand.NewSource(time.Now().UnixNano())
-	p := make([]byte, 8)
+	p := make([]byte, 16)
 	for i := range p {
 		p[i] = byte(src.Int63() & 0xff)
 	}

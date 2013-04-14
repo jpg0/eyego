@@ -16,7 +16,6 @@ type SoapStartSession struct {
 	CNonce     string `xml:"cnonce"`
 	TransferMode          string `xml:"transfermode"`
 	TransferModeTimestamp string `xml:"transfermodetimestamp"`
-//	XMLName xml.Name `xml:"ns1:StartSession"`
 }
 
 type SoapStartSessionResponse struct {
@@ -25,7 +24,7 @@ type SoapStartSessionResponse struct {
 	TransferMode          string `xml:"transfermode"`
 	TransferModeTimestamp string `xml:"transfermodetimestamp"`
 	UpSyncAllowed string `xml:"upsyncallowed"`
-//	XMLName xml.Name `xml:"ns1:SoapStartSessionResponse"`
+	XMLName xml.Name `xml:"ns1:StartSessionResponse"`
 }
 
 func ParseSoap(s string, target interface {}) {

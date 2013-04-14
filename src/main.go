@@ -20,5 +20,5 @@ func main() {
 	eyefi.AddCardConfigs(config.Cards)
 
 	http.HandleFunc("/", eyefi.Handler)
-	http.ListenAndServe(":59278", nil)
+	http.ListenAndServe(":59279", nil)
 }

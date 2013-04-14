@@ -29,12 +29,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		panic("unknown soap format")
 	}
 
-	r.Header.Set("Content-Type", "application/xml")
-
-	fmt.Println(rv.Get().(string))
-
-
-	fmt.Fprintf(w, rv.Get().(string))
+	responseString := rv.Get().(string)
+	w.Header().Add("Content-Length", fmt.Sprint(len(responseString)))
+	fmt.Fprintf(w, responseString)
 }
 
 func doStartSession(body SoapStartSession) promise.Promise {
