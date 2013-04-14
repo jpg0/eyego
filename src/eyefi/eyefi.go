@@ -39,6 +39,10 @@ func GetCard(mac_address string) Card {
 }
 
 func (c Card) Credential(cnonce string) string {
+	if len(cnonce) == 0 {
+		panic("no cnonce")
+	}
+
 	h := md5.New()
 	binary, _ := hex.DecodeString(c.MacAddress + cnonce + c.UploadKey)
 	h.Write(binary)

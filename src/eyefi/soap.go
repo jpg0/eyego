@@ -3,8 +3,12 @@ package eyefi
 import (
 	"encoding/xml"
 	"bytes"
-	"fmt"
 	"io"
+)
+
+const (
+	soapStart = `<?xml version="1.0" encoding="UTF-8"?><SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ns1="EyeFi/SOAP/EyeFilm"><SOAP-ENV:Body>`
+	soapEnd = `</SOAP-ENV:Body></SOAP-ENV:Envelope>`
 )
 
 type SoapStartSession struct {
@@ -12,6 +16,7 @@ type SoapStartSession struct {
 	CNonce     string `xml:"cnonce"`
 	TransferMode          string `xml:"transfermode"`
 	TransferModeTimestamp string `xml:"transfermodetimestamp"`
+//	XMLName xml.Name `xml:"ns1:StartSession"`
 }
 
 type SoapStartSessionResponse struct {
@@ -20,45 +25,29 @@ type SoapStartSessionResponse struct {
 	TransferMode          string `xml:"transfermode"`
 	TransferModeTimestamp string `xml:"transfermodetimestamp"`
 	UpSyncAllowed string `xml:"upsyncallowed"`
-	XMLName xml.Name
+//	XMLName xml.Name `xml:"ns1:SoapStartSessionResponse"`
 }
 
-type SoapFault struct {
-	Faultstring string
-	Detail      string
+func ParseSoap(s string, target interface {}) {
+	if s[0:len(soapStart)] != soapStart || s[len(s)-len(soapEnd):len(s)] != soapEnd {
+		panic("Unknown soap request:\n" + s)
+	}
+
+	body := s[len(soapStart):len(s)-len(soapEnd)]
+
+	parser := xml.NewDecoder(bytes.NewBufferString(body))
+	parser.Decode(target)
 }
 
-type SoapBody struct {
-	Fault           *SoapFault
-	//possible bodies
-	StartSession    *SoapStartSession
-	StartSessionResponse *SoapStartSessionResponse
-}
-type SoapEnvelope struct {
-	XMLName xml.Name
-	Body    SoapBody
-}
-
-func ParseSoap(s string) SoapBody {
-	parser := xml.NewDecoder(bytes.NewBufferString(s))
-	envelope := new(SoapEnvelope)
-	parser.DecodeElement(&envelope, nil)
-	fmt.Print(envelope.XMLName)
-	return envelope.Body
-}
-
-func CreateSoap(body SoapBody) string {
+func CreateSoap(body interface{}) string {
 	buffer := bytes.NewBuffer(make([]byte, 0))
 	WriteSoap(body, buffer)
 	return string(buffer.Bytes())
 }
 
-func WriteSoap(body SoapBody, writer io.Writer) {
+func WriteSoap(body interface{}, writer io.Writer) {
 	encoder := xml.NewEncoder(writer)
-	writer.Write([]byte(xml.Header))
-	encoder.Encode(SoapEnvelope{
-		Body: body,
-		XMLName: xml.Name{
-			Space:"http://schemas.xmlsoap.org/soap/envelope/",
-			Local:"Envelope"}})
+	writer.Write([]byte(soapStart))
+	encoder.Encode(body)
+	writer.Write([]byte(soapEnd))
 }

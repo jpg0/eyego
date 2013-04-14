@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"io/ioutil"
 	"promise"
-	"encoding/xml"
 )
 
 func Handler(w http.ResponseWriter, r *http.Request) {
@@ -13,7 +12,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println(string(body_bytes))
 
-	body := ParseSoap(string(body_bytes))
+	body := string(body_bytes)
 
 	actionHeader := r.Header.Get("SOAPAction")
 	action := actionHeader[5:len(actionHeader) - 1]
@@ -23,7 +22,9 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 	switch (action) {
 	case "StartSession":
-		rv = doStartSession(*body.StartSession)
+		soap := new(SoapStartSession)
+		ParseSoap(body, soap)
+		rv = doStartSession(*soap)
 	default:
 		panic("unknown soap format")
 	}
@@ -42,16 +43,11 @@ func doStartSession(body SoapStartSession) promise.Promise {
 
 	rv := promise.NewEagerPromise(func() interface{} {
 		return CreateSoap(
-		SoapBody{
-			StartSessionResponse:&SoapStartSessionResponse{
+			SoapStartSessionResponse{
 				Credential:card.Credential(body.CNonce),
 				SNonce:GenerateSNonce(),
-				TransferMode: body.TransferMode,
+				TransferMode: "2",
 				TransferModeTimestamp: body.TransferModeTimestamp,
-				UpSyncAllowed:"false",
-				XMLName:xml.Name{
-					Space:"http://localhost/api/soap/eyefilm",
-					Local:"StartSessionResponse"}}})
-	})
+				UpSyncAllowed:"false"})})
 	return rv
 }
