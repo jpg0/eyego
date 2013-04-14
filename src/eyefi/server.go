@@ -10,28 +10,44 @@ import (
 func Handler(w http.ResponseWriter, r *http.Request) {
 	body_bytes, _ := ioutil.ReadAll(r.Body)
 
-	fmt.Println(string(body_bytes))
-
 	body := string(body_bytes)
 
-	actionHeader := r.Header.Get("SOAPAction")
-	action := actionHeader[5:len(actionHeader) - 1]
 	var rv promise.Promise
 
-	fmt.Print(action)
+	switch (r.URL.Path) {
+	case "/api/soap/eyefilm/v1":
 
-	switch (action) {
-	case "StartSession":
-		soap := new(SoapStartSession)
-		ParseSoap(body, soap)
-		rv = doStartSession(*soap)
-	default:
-		panic("unknown soap format")
+		actionHeader := r.Header.Get("SOAPAction")
+		action := actionHeader[5:len(actionHeader) - 1]
+
+		switch (action) {
+		case "StartSession":
+			soap := new(SoapStartSession)
+			ParseSoap(body, soap)
+			rv = doStartSession(*soap)
+		case "GetPhotoStatus":
+			soap := new(GetPhotoStatus)
+			ParseSoap(body, soap)
+			rv = doGetPhotoStatus(*soap)
+		default:
+			panic("unknown soap format")
+		}
+	case "/api/soap/eyefilm/v1/upload":
+		fmt.Println(r.MultipartForm)
 	}
 
 	responseString := rv.Get().(string)
 	w.Header().Add("Content-Length", fmt.Sprint(len(responseString)))
 	fmt.Fprintf(w, responseString)
+}
+
+func doGetPhotoStatus(body GetPhotoStatus) promise.Promise {
+	rv := promise.NewEagerPromise(func() interface{} {
+		return CreateSoap(
+		GetPhotoStatusResponse{
+			FileID:"1",
+			Offset:"0"})})
+	return rv
 }
 
 func doStartSession(body SoapStartSession) promise.Promise {
