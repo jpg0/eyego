@@ -8,15 +8,13 @@ import (
 )
 
 func Handler(w http.ResponseWriter, r *http.Request) {
-	body_bytes, _ := ioutil.ReadAll(r.Body)
-
-	body := string(body_bytes)
 
 	var rv promise.Promise
 
 	switch (r.URL.Path) {
 	case "/api/soap/eyefilm/v1":
-
+		body_bytes, _ := ioutil.ReadAll(r.Body)
+		body := string(body_bytes)
 		actionHeader := r.Header.Get("SOAPAction")
 		action := actionHeader[5:len(actionHeader) - 1]
 
@@ -33,7 +31,11 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			panic("unknown soap format")
 		}
 	case "/api/soap/eyefilm/v1/upload":
-		fmt.Println(r.MultipartForm)
+		var err error
+		rv, err = doPhotoUpload(r)
+		if err != nil {
+			panic(fmt.Sprintf("Upload failed %s", err))
+		}
 	}
 
 	responseString := rv.Get().(string)
@@ -56,11 +58,11 @@ func doStartSession(body SoapStartSession) promise.Promise {
 
 	rv := promise.NewEagerPromise(func() interface{} {
 		return CreateSoap(
-			SoapStartSessionResponse{
-				Credential:card.Credential(body.CNonce),
-				SNonce:GenerateSNonce(),
-				TransferMode: "2",
-				TransferModeTimestamp: body.TransferModeTimestamp,
-				UpSyncAllowed:"false"})})
+		SoapStartSessionResponse{
+			Credential:card.Credential(body.CNonce),
+			SNonce:GenerateSNonce(),
+			TransferMode: "2",
+			TransferModeTimestamp: body.TransferModeTimestamp,
+			UpSyncAllowed:"false"})})
 	return rv
 }
