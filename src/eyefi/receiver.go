@@ -55,7 +55,10 @@ func doPhotoUpload(r *http.Request) (rv promise.Promise, err error) {
 }
 
 func processUpload(mediaFile string, logFile string, soap UploadPhoto) promise.Promise {
-return nil
+	fmt.Println("%s,%s")
+	return promise.NewEagerPromise(func() interface {}{
+		return "ok"
+	})
 }
 
 func readString(p *multipart.Part) (s string, err error) {
@@ -76,6 +79,14 @@ func writeFiles(r io.Reader) (mediaFile string, mediaChecksum func(string) strin
 	checksumReader := NewChecksumReader(r)
 	tarReader := tar2.NewReader(checksumReader)
 
+	targetDir := "/tmp/eyego"
+	err = os.Mkdir(targetDir, 0755)
+
+
+	if err != nil {
+		panic(err)
+	}
+
 	for {
 		header, err = tarReader.Next()
 
@@ -85,7 +96,12 @@ func writeFiles(r io.Reader) (mediaFile string, mediaChecksum func(string) strin
 			return
 		}
 
-		out, err = os.OpenFile(fmt.Sprintf("/tmp/%s", header.Name), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+		out, err = os.OpenFile(fmt.Sprintf("%s/%s", targetDir, header.Name), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+
+		if err != nil {
+			panic(err)
+		}
+
 		fmt.Println(out)
 		io.Copy(out, tarReader)
 		err = out.Close()

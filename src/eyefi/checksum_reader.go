@@ -56,13 +56,15 @@ func (cr ChecksumReader) Checksum(uploadKey string) string {
 
 func (cr ChecksumReader) appendBytes(b []byte, len int) {
 
+	cr = *cr.self
 	if cr.ptr + len >= 512 {
-		copy(cr.buf[cr.ptr:512], b[0:512-cr.ptr])
-		cr.self.checksums = append(cr.checksums, tcp_checksum(cr.buf))
-		copy(b[512-cr.ptr:len], cr.buf[0:len-(512-cr.ptr)])
+		copy(cr.buf[cr.ptr:512], b[0:512-cr.ptr]) //copy bytes to fill temp buffer
+		cr.checksums = append(cr.checksums, tcp_checksum(cr.buf))
+		cr.buf = cr.buf[:0]
+		copy(cr.buf, b[512-cr.ptr:len]) //copy remaining bytes
 		cr.ptr = len - (512 - cr.ptr)
 	} else { //
-		copy(b[0:len], cr.buf[cr.ptr:cr.ptr+len])
+		copy(cr.buf[cr.ptr:cr.ptr+len], b[0:len])
 		cr.ptr += len
 	}
 }
