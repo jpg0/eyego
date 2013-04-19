@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"tar2"
 	"os"
+	"io/ioutil"
 )
 
 func doPhotoUpload(r *http.Request) (rv promise.Promise, err error) {
@@ -19,6 +20,7 @@ func doPhotoUpload(r *http.Request) (rv promise.Promise, err error) {
 	}
 
 	var soapString,integrityDigest, mediaFile, logFile string
+	var mediaChecksummer func(string) string
 
 	for {
 		part, err2 := multipartReader.NextPart()
@@ -34,17 +36,26 @@ func doPhotoUpload(r *http.Request) (rv promise.Promise, err error) {
 		case "INTEGRITYDIGEST":
 			integrityDigest, err = readString(part)
 		case "FILENAME":
-			mediaFile, logFile, err = writeFiles(part)
+			mediaFile, mediaChecksummer, logFile, err = writeFiles(part)
 		}
 
 		if err != nil { return }
 	}
 
-	return processUpload(mediaFile, logFile, soapString, integrityDigest), nil
+	soap := new(UploadPhoto)
+	ParseSoap(soapString, soap)
+	card := GetCard(soap.MacAddress)
+
+	if integrityDigest != mediaChecksummer(card.MacAddress) {
+		panic("Bad integrity digest")
+	}
+
+
+	return processUpload(mediaFile, logFile, *soap), nil
 }
 
-func processUpload(mediaFile string, logFile string, soapString string, integrityDigest string) promise.Promise {
-	return nil
+func processUpload(mediaFile string, logFile string, soap UploadPhoto) promise.Promise {
+return nil
 }
 
 func readString(p *multipart.Part) (s string, err error) {
@@ -57,12 +68,13 @@ func readString(p *multipart.Part) (s string, err error) {
 	return string(buffer.Bytes()), nil
 }
 
-func writeFiles(r io.Reader) (mediaFile string, logFile string, err error) {
+func writeFiles(r io.Reader) (mediaFile string, mediaChecksum func(string) string, logFile string, err error) {
 
 	var header *tar2.Header
 	var out *os.File
 
-	tarReader := tar2.NewReader(r)
+	checksumReader := NewChecksumReader(r)
+	tarReader := tar2.NewReader(checksumReader)
 
 	for {
 		header, err = tarReader.Next()
@@ -89,5 +101,7 @@ func writeFiles(r io.Reader) (mediaFile string, logFile string, err error) {
 		}
 	}
 
-	return mediaFile, logFile, nil
+	ioutil.ReadAll(checksumReader)
+
+	return mediaFile, func(s string) string{return checksumReader.Checksum(s)}, logFile, nil
 }

@@ -4,18 +4,25 @@ import (
 	"net/http"
 	"eyefi"
 	"flag"
-//	"os"
 )
 
 func main() {
 
-//	f, err := os.OpenFile("/tmp/in.tar", os.O_RDONLY, 0600)
 //
-//	_, _, err = eyefi.WriteFiles(f)
+////	_, _, err = eyefi.WriteFiles(f)
 //
 //	if err != nil {
 //		panic(err)
 //	}
+//
+//	var block []byte
+//	block = make([]byte, 512)
+//
+//	n, err := f.Read(block)
+//
+//	if n != 512 { panic(n) }
+//
+//	fmt.Println(eyefi.tcp_checksum(block[0:512]))
 //
 //	return
 

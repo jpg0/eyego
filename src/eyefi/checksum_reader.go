@@ -12,17 +12,20 @@ type ChecksumReader struct {
 	buf [/*512*/]byte
 	ptr int
 	checksums []uint16
+	self *ChecksumReader
 }
 
 func NewChecksumReader(r io.Reader) ChecksumReader {
-	return ChecksumReader {
+	cr := ChecksumReader {
 		delegate: r,
 		ptr: 0,
 		buf: make([]byte, 512),
 		checksums: make([]uint16, 0, 16)}
+	cr.self = &cr
+	return cr
 }
 
-func (cr *ChecksumReader) Read(p []byte) (n int, err error){
+func (cr ChecksumReader) Read(p []byte) (n int, err error){
 	n, err = cr.delegate.Read(p)
 
 	if err == nil {
@@ -51,11 +54,11 @@ func (cr ChecksumReader) Checksum(uploadKey string) string {
 	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func (cr *ChecksumReader) appendBytes(b []byte, len int) {
+func (cr ChecksumReader) appendBytes(b []byte, len int) {
 
 	if cr.ptr + len >= 512 {
 		copy(cr.buf[cr.ptr:512], b[0:512-cr.ptr])
-		cr.checksums = append(cr.checksums, tcp_checksum(cr.buf))
+		cr.self.checksums = append(cr.checksums, tcp_checksum(cr.buf))
 		copy(b[512-cr.ptr:len], cr.buf[0:len-(512-cr.ptr)])
 		cr.ptr = len - (512 - cr.ptr)
 	} else { //

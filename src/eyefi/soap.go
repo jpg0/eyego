@@ -43,6 +43,17 @@ type GetPhotoStatusResponse struct {
 	XMLName xml.Name `xml:"ns1:GetPhotoStatusResponse"`
 }
 
+type UploadPhoto struct {
+	FileID string `xml:"fileid"`
+	MacAddress string `xml:"macaddress"`
+	Filename string `xml:"filename"`
+	FileSize string `xml:"filesize"`
+	FileSignature string `xml:"filesignature"`
+	Encryption string `xml:"encryption"`
+	Flags string `xml:"flags"`
+	XMLName xml.Name `xml:"ns1:UploadPhoto"`
+}
+
 func ParseSoap(s string, target interface {}) {
 	if s[0:len(soapStart)] != soapStart || s[len(s)-len(soapEnd):len(s)] != soapEnd {
 		panic("Unknown soap request:\n" + s)
