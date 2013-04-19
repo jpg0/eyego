@@ -1,11 +1,10 @@
 package eyefi
 
-import "io"
 import (
+	"io"
 	"encoding/hex"
 	"fmt"
-//	"encoding/binary"
-//	"bytes"
+	"crypto/md5"
 )
 
 type ChecksumReader struct {
@@ -19,37 +18,43 @@ func NewChecksumReader(r io.Reader) ChecksumReader {
 	return ChecksumReader {
 		delegate: r,
 		ptr: 0,
-		checksums: make([]uint16, 16)}
+		buf: make([]byte, 512),
+		checksums: make([]uint16, 0, 16)}
 }
 
-func (cr ChecksumReader) Read(p []byte) (n int, err error){
-	n, err = cr.Read(p)
+func (cr *ChecksumReader) Read(p []byte) (n int, err error){
+	n, err = cr.delegate.Read(p)
 
-	if err != nil {
-		cr.appendBytes(p,n)
+	if err == nil {
+		cr.appendBytes(p, n)
 	}
 
 	return n, nil
 }
 
-func (cr ChecksumReader) Checksum(uploadKey string) {
+func (cr ChecksumReader) Checksum(uploadKey string) string {
+
 	b, _ := hex.DecodeString(uploadKey)
 
 	if len(b) % 2 != 0 { panic("Bad upload key")}
 
-	cs := make([]uint16, len(cr.checksums))
-	copy(cr.checksums, cs)
+	h := md5.New()
 
-//	for c := 0; c < len(b); c = c + 2 {
-//		cs = append(cs, int16(b[c:c+1]))
-//	}
+	for i := 0; i < len(cr.checksums); i++ {
+		h.Write([]byte{
+			byte(cr.checksums[i]),
+			byte(cr.checksums[i] >> 8)})
+	}
 
+	h.Write(b)
+
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
 
-func (cr ChecksumReader) appendBytes(b []byte, len int) {
+func (cr *ChecksumReader) appendBytes(b []byte, len int) {
 
 	if cr.ptr + len >= 512 {
-		copy(b[0:512-cr.ptr], cr.buf[cr.ptr:512])
+		copy(cr.buf[cr.ptr:512], b[0:512-cr.ptr])
 		cr.checksums = append(cr.checksums, tcp_checksum(cr.buf))
 		copy(b[512-cr.ptr:len], cr.buf[0:len-(512-cr.ptr)])
 		cr.ptr = len - (512 - cr.ptr)
