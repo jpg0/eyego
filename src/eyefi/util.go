@@ -3,6 +3,7 @@ package eyefi
 import (
 	"io"
 	"bufio"
+	"strconv"
 )
 
 func EachLine(r io.Reader, f func(string) interface {}) (rv []interface {}, err error){
@@ -21,3 +22,17 @@ func EachLine(r io.Reader, f func(string) interface {}) (rv []interface {}, err 
 	return rv, err
 }
 
+func Atoi(s string) (i int) {
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		panic(err)
+	}
+	return
+}
+
+func Abs(i int) int {
+	if i < 0 {
+		return -i
+	}
+	return i
+}
