@@ -5,31 +5,46 @@ import (
 	"encoding/json"
 	"io/ioutil"
 )
+type EyegoConfig struct {
+	GoogleAPIKey string `json:"google_api_key"`
+	Cards []Card `json:"cards"`
+}
 
-type CardConfig struct {
+
+type Card struct {
 	UploadKey string `json:"upload_key"`
 	MacAddress string `json:"mac_address"`
 }
 
-type EyegoConfig struct {
-	Cards []CardConfig `json:"cards"`
-}
+var config EyegoConfig
 
-func ConfigFrom(path string) (config EyegoConfig, err error) {
+func ConfigFrom(path string) {
 	b, err := ioutil.ReadFile(path)
 	if err != nil {
-		return
+		panic(err)
 	}
 
 	err = json.Unmarshal(b, &config)
 	if err != nil {
-		fmt.Print("bad json ", err)
+		fmt.Print(err)
 	}
+}
 
-	return config, nil
+func Config() EyegoConfig {
+	return config
 }
 
 func DumpConfig(config EyegoConfig) {
 	data, _ := json.Marshal(config)
 	fmt.Printf("%s", data)
+}
+
+func GetCard(mac_address string) Card {
+	for i := range config.Cards {
+		if config.Cards[i].MacAddress == mac_address {
+			return config.Cards[i]
+		}
+	}
+
+	panic("no such card")
 }

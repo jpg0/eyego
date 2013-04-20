@@ -31,14 +31,12 @@ type PoweredCycle struct {
 	AccessPoints map[string] []AccessPointSighting
 }
 
-type PowerOn struct {
-
-}
+type PowerOn struct {}
 
 type AccessPointSightingInfo struct {
-	MacAddress string
-	Age int
-	SNR int
+	MacAddress string `json:"mac_address"`
+	Age int `json:"age"`
+	SNR int `json:"signalToNoiseRatio"`
 }
 
 func ParseLog(log io.Reader) (p ParsedLog, err error) {

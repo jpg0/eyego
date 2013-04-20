@@ -4,12 +4,11 @@ import (
 	"fmt"
 	"net/http"
 	"io/ioutil"
-	"promise"
 )
 
 func Handler(w http.ResponseWriter, r *http.Request) {
 
-	var rv promise.Promise
+	var response string
 
 	switch (r.URL.Path) {
 	case "/api/soap/eyefilm/v1":
@@ -22,47 +21,42 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 		case "StartSession":
 			soap := new(SoapStartSession)
 			ParseSoap(body, soap)
-			rv = doStartSession(*soap)
+			response = doStartSession(*soap)
 		case "GetPhotoStatus":
 			soap := new(GetPhotoStatus)
 			ParseSoap(body, soap)
-			rv = doGetPhotoStatus(*soap)
+			response = doGetPhotoStatus(*soap)
 		default:
 			panic("unknown soap format")
 		}
 	case "/api/soap/eyefilm/v1/upload":
 		var err error
-		rv, err = doPhotoUpload(r)
+		err = doPhotoUpload(r)
 		if err != nil {
 			panic(fmt.Sprintf("Upload failed %s", err))
 		}
 	}
 
-	responseString := rv.Get().(string)
-	w.Header().Add("Content-Length", fmt.Sprint(len(responseString)))
-	fmt.Fprintf(w, responseString)
+	w.Header().Add("Content-Length", fmt.Sprint(len(response)))
+	fmt.Fprintf(w, response)
 }
 
-func doGetPhotoStatus(body GetPhotoStatus) promise.Promise {
-	rv := promise.NewEagerPromise(func() interface{} {
-		return CreateSoap(
+func doGetPhotoStatus(body GetPhotoStatus) string {
+	return CreateSoap(
 		GetPhotoStatusResponse{
 			FileID:"1",
-			Offset:"0"})})
-	return rv
+			Offset:"0"})
 }
 
-func doStartSession(body SoapStartSession) promise.Promise {
+func doStartSession(body SoapStartSession) string {
 
 	card := GetCard(body.MacAddress)
 
-	rv := promise.NewEagerPromise(func() interface{} {
-		return CreateSoap(
+	return CreateSoap(
 		SoapStartSessionResponse{
 			Credential:card.Credential(body.CNonce),
 			SNonce:GenerateSNonce(),
 			TransferMode: "2",
 			TransferModeTimestamp: body.TransferModeTimestamp,
-			UpSyncAllowed:"false"})})
-	return rv
+			UpSyncAllowed:"false"})
 }
