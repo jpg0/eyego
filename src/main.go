@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"eyefi"
 	"flag"
-	"fmt"
-	"os"
 )
 
 func main() {
