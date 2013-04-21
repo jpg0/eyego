@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 )
 type EyegoConfig struct {
+	TargetDir string `json:"target_dir"`
 	GoogleAPIKey string `json:"google_api_key"`
 	Cards []Card `json:"cards"`
 }

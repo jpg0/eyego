@@ -34,7 +34,7 @@ type PoweredCycle struct {
 type PowerOn struct {}
 
 type AccessPointSightingInfo struct {
-	MacAddress string `json:"mac_address"`
+	MacAddress string `json:"macAddress"`
 	Age int `json:"age"`
 	SNR int `json:"signalToNoiseRatio"`
 }

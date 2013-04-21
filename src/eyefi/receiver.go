@@ -9,6 +9,7 @@ import (
 	"tar2"
 	"os"
 	"io/ioutil"
+	"path"
 )
 
 func doPhotoUpload(r *http.Request) (err error) {
@@ -18,8 +19,8 @@ func doPhotoUpload(r *http.Request) (err error) {
 		return
 	}
 
-	var soapString,integrityDigest, mediaFile, logFile string
-	var mediaChecksummer func(string) string
+	var soapString, integrityDigest, mediaFile, logFile string
+	var mediaChecksummer func (string) string
 
 	for {
 		part, err2 := multipartReader.NextPart()
@@ -69,21 +70,27 @@ func geotag(mediaFile string, logFile string, soap UploadPhoto) string {
 
 	aps := p.AccessPoints(soap.Filename)
 
-	coords, err := GPSCoordinates(aps)
-	if err != nil {panic(err)}
+	if len(aps) > 0 {
+		location, err := GPSCoordinates(aps)
+		if err != nil {panic(err)}
 
-	newMedia := writeGeotag(mediaFile, coords)
+		mediaFile = writeGeotag(mediaFile, location)
+	}
 
-	move(newMedia)
+	move(mediaFile)
 
 	return "ok"
 }
 
 func writeGeotag(mediaFile string, location LocationResult) string {
-	return "test"
+	//os.StartProcess()
+	return ""
 }
 
-func move(mediaFile string) {
+func move(mediaFile string) (targetFile string, err error) {
+	targetFile = path.Join(Config().TargetDir, path.Base(mediaFile))
+	err = os.Rename(mediaFile, targetFile)
+	return
 }
 
 func readString(p *multipart.Part) (s string, err error) {
@@ -96,7 +103,7 @@ func readString(p *multipart.Part) (s string, err error) {
 	return string(buffer.Bytes()), nil
 }
 
-func writeFiles(r io.Reader) (mediaFile string, mediaChecksum func(string) string, logFile string, err error) {
+func writeFiles(r io.Reader) (mediaFile string, mediaChecksum func (string) string, logFile string, err error) {
 
 	var header *tar2.Header
 	var out *os.File
@@ -121,7 +128,7 @@ func writeFiles(r io.Reader) (mediaFile string, mediaChecksum func(string) strin
 			return
 		}
 
-		out, err = os.OpenFile(fmt.Sprintf("%s/%s", targetDir, header.Name), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+		out, err = os.OpenFile(fmt.Sprintf("%s/%s", targetDir, header.Name), os.O_WRONLY | os.O_CREATE | os.O_EXCL, 0600)
 
 		if err != nil {
 			panic(err)
@@ -144,7 +151,7 @@ func writeFiles(r io.Reader) (mediaFile string, mediaChecksum func(string) strin
 
 	ioutil.ReadAll(checksumReader)
 
-	return mediaFile, func(s string) string{return checksumReader.Checksum(s)}, logFile, nil
+	return mediaFile, func(s string) string {return checksumReader.Checksum(s)}, logFile, nil
 }
 
 func wrap()
