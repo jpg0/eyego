@@ -1,4 +1,4 @@
-package eyefi
+package eyego
 
 import (
 	"io"

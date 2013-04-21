@@ -1,4 +1,4 @@
-package tar2
+package eyego
 
 // Copyright 2009 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
@@ -116,7 +116,7 @@ type Reader struct {
 }
 
 // NewReader creates a new Reader reading from r.
-func NewReader(r io.Reader) *Reader { return &Reader{r: r} }
+func NewTarReader(r io.Reader) *Reader { return &Reader{r: r} }
 
 // Next advances to the next entry in the tar archive.
 func (tr *Reader) Next() (*Header, error) {

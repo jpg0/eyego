@@ -1,4 +1,4 @@
-package eyefi
+package eyego
 
 import (
 	"io"
@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"mime/multipart"
 	"bytes"
-	"tar2"
 	"os"
 	"io/ioutil"
 	"path"
@@ -156,11 +155,11 @@ func readString(p *multipart.Part) (s string, err error) {
 
 func writeFiles(r io.Reader) (mediaFile string, mediaChecksum func (string) string, logFile string, err error) {
 
-	var header *tar2.Header
+	var header *Header
 	var out *os.File
 
 	checksumReader := NewChecksumReader(r)
-	tarReader := tar2.NewReader(checksumReader)
+	tarReader := NewTarReader(checksumReader)
 
 	targetDir := "/tmp/eyego"
 	err = os.Mkdir(targetDir, 0755)
