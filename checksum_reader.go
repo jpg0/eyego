@@ -32,7 +32,7 @@ func (cr ChecksumReader) Read(p []byte) (n int, err error){
 		cr.appendBytes(p, n)
 	}
 
-	return n, nil
+	return n, err
 }
 
 func (cr ChecksumReader) Checksum(uploadKey string) string {
