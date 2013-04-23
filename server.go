@@ -26,15 +26,21 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			soap := new(GetPhotoStatus)
 			ParseSoap(body, soap)
 			response = doGetPhotoStatus(*soap)
+		case "MarkLastPhotoInRoll":
+			soap := new(MarkLastPhotoInRoll)
+			ParseSoap(body, soap)
+			response = CreateSoap(MarkLastPhotoInRollResponse{})
 		default:
 			panic("unknown soap format")
 		}
 	case "/api/soap/eyefilm/v1/upload":
+		Info("Upload started...")
 		var err error
 		err = doPhotoUpload(r)
 		if err != nil {
 			panic(fmt.Sprintf("Upload failed %s", err))
 		}
+		Info("Upload complete.")
 	}
 
 	w.Header().Add("Content-Length", fmt.Sprint(len(response)))
