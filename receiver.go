@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"path"
 	"os/exec"
+	"strings"
 )
 
 func doPhotoUpload(r *http.Request) (err error) {
@@ -23,31 +24,47 @@ func doPhotoUpload(r *http.Request) (err error) {
 	var mediaChecksummer func (string) string
 
 	for {
+		Debug("Parsing MIME part...")
 		part, err2 := multipartReader.NextPart()
 		if err2 == io.EOF {
+			Debug("Completed MIME parsing.")
 			break
 		} else if err2 != nil {
+			LogError("Failed MIME parsing: %s", err2)
 			return
 		}
 
 		switch part.FormName() {
 		case "SOAPENVELOPE":
 			soapString, err = readString(part)
+			Debug("SOAPENVELOPE: %s", soapString)
 		case "INTEGRITYDIGEST":
 			integrityDigest, err = readString(part)
+			Debug("INTEGRITYDIGEST: %s", integrityDigest)
 		case "FILENAME":
 			mediaFile, mediaChecksummer, logFile, err = writeFiles(part)
+			Debug("FILENAME: %s", mediaFile)
 		}
 
-		if err != nil { return }
+		err = part.Close()
+
+		if err != nil {
+			LogError("Upload failed: %s", err)
+			return
+		}
 	}
 
 	soap := new(UploadPhoto)
 	ParseSoap(soapString, soap)
+
+	Info("Uploading %s", soap.Filename)
+
 	card := GetCard(soap.MacAddress)
 
 	if integrityDigest != mediaChecksummer(card.MacAddress) {
 		panic("Bad integrity digest")
+	} else {
+		Debug("Integrity digest verified ok")
 	}
 
 
@@ -70,16 +87,20 @@ func geotag(mediaFile string, logFile string, soap UploadPhoto) string {
 
 	aps := p.AccessPoints(soap.Filename)
 
-	if len(aps) > 0 {
+	if len(aps) > 0 && strings.HasSuffix(strings.ToLower(soap.Filename), ".jpg") {
 		location, err := GPSCoordinates(aps)
 		if err != nil {panic(err)}
 
 		mediaFile = WriteGeotag(mediaFile, location)
+
+		Info("Photo %s geotagged %v:%v", soap.Filename, location.Location.Latitude, location.Location.Longitude)
 	}
 
 	move(mediaFile)
 
-	return "ok"
+	Info("Photo %s archived", soap.Filename)
+
+	return CreateSoap(UploadPhotoResponse{Success:"true"})
 }
 
 func WriteGeotag(mediaFile string, location LocationResult) string {
@@ -158,15 +179,18 @@ func writeFiles(r io.Reader) (mediaFile string, mediaChecksum func (string) stri
 	var header *Header
 	var out *os.File
 
+	Debug("Unpacking and verifying tar")
+
 	checksumReader := NewChecksumReader(r)
 	tarReader := NewTarReader(checksumReader)
 
 	targetDir := "/tmp/eyego"
-	err = os.Mkdir(targetDir, 0755)
+	if _, err := os.Stat(targetDir); err != nil {
+		err = os.Mkdir(targetDir, 0755)
 
-
-	if err != nil {
-		panic(err)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	for {
@@ -178,13 +202,12 @@ func writeFiles(r io.Reader) (mediaFile string, mediaChecksum func (string) stri
 			return
 		}
 
-		out, err = os.OpenFile(fmt.Sprintf("%s/%s", targetDir, header.Name), os.O_WRONLY | os.O_CREATE | os.O_EXCL, 0600)
+		out, err = os.OpenFile(fmt.Sprintf("%s/%s", targetDir, header.Name), os.O_WRONLY | os.O_CREATE | os.O_TRUNC, 0600)
 
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Println(out)
 		io.Copy(out, tarReader)
 		err = out.Close()
 
