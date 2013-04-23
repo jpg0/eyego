@@ -47,5 +47,5 @@ func GetCard(mac_address string) Card {
 		}
 	}
 
-	panic("no such card")
+	panic(fmt.Sprintf("no such card: %s", mac_address))
 }
