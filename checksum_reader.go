@@ -9,19 +9,22 @@ import (
 
 type ChecksumReader struct {
 	delegate io.Reader
+	state *checksumState
+}
+
+type checksumState struct {
 	buf [/*512*/]byte
 	ptr int
 	checksums []uint16
-	self *ChecksumReader
 }
 
 func NewChecksumReader(r io.Reader) ChecksumReader {
 	cr := ChecksumReader {
 		delegate: r,
-		ptr: 0,
-		buf: make([]byte, 512),
-		checksums: make([]uint16, 0, 16)}
-	cr.self = &cr
+		state: &checksumState{
+			buf: make([]byte, 512),
+			checksums: make([]uint16, 0, 16)}}
+
 	return cr
 }
 
@@ -43,10 +46,10 @@ func (cr ChecksumReader) Checksum(uploadKey string) string {
 
 	h := md5.New()
 
-	for i := 0; i < len(cr.checksums); i++ {
+	for i := 0; i < len(cr.state.checksums); i++ {
 		h.Write([]byte{
-			byte(cr.checksums[i]),
-			byte(cr.checksums[i] >> 8)})
+			byte(cr.state.checksums[i]),
+			byte(cr.state.checksums[i] >> 8)})
 	}
 
 	h.Write(b)
@@ -56,16 +59,17 @@ func (cr ChecksumReader) Checksum(uploadKey string) string {
 
 func (cr ChecksumReader) appendBytes(b []byte, len int) {
 
-	cr = *cr.self
-	if cr.ptr + len >= 512 {
-		copy(cr.buf[cr.ptr:512], b[0:512-cr.ptr]) //copy bytes to fill temp buffer
-		cr.checksums = append(cr.checksums, tcp_checksum(cr.buf))
-		cr.buf = cr.buf[:0]
-		copy(cr.buf, b[512-cr.ptr:len]) //copy remaining bytes
-		cr.ptr = len - (512 - cr.ptr)
+	if cr.state.ptr + len >= 512 {
+		Trace("Added block")
+		copy(cr.state.buf[cr.state.ptr:512], b[0:512-cr.state.ptr]) //copy bytes to fill temp buffer
+		cr.state.checksums = append(cr.state.checksums, tcp_checksum(cr.state.buf))
+		cr.state.buf = cr.state.buf[:0]
+		copy(cr.state.buf, b[512-cr.state.ptr:len]) //copy remaining bytes
+		cr.state.ptr = len - (512 - cr.state.ptr)
 	} else { //
-		copy(cr.buf[cr.ptr:cr.ptr+len], b[0:len])
-		cr.ptr += len
+		Trace("Added %d bytes to (%d byte) buffer", len, cr.state.ptr)
+		copy(cr.state.buf[cr.state.ptr:cr.state.ptr+len], b[0:len])
+		cr.state.ptr += len
 	}
 }
 
