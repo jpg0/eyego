@@ -52,18 +52,21 @@ func ParseLog(log io.Reader) (p ParsedLog, err error) {
 	for i := range lines {
 		switch t := lines[i].(type){
 		case AccessPointSighting:
+			Trace("Found AccessPointSighting")
 			if cycle.AccessPoints[t.MacAddress] == nil {
 				cycle.AccessPoints[t.MacAddress] = make([]AccessPointSighting, 0, 1)
 			}
 
 			cycle.AccessPoints[t.MacAddress] = append(cycle.AccessPoints[t.MacAddress], t)
 		case NewPhoto:
+			Trace("Found NewPhoto")
 			if cycle.Photos[t.Filename] == nil {
 				cycle.Photos[t.Filename] = make([]NewPhoto, 0, 1)
 			}
 
 			cycle.Photos[t.Filename] = append(cycle.Photos[t.Filename], t)
 		case PowerOn:
+			Trace("Found PowerOn")
 			p.Cycles = append(p.Cycles, cycle)
 			cycle = PoweredCycle{
 				Photos: make(map[string] []NewPhoto),
@@ -95,7 +98,7 @@ func (c PoweredCycle) accessPoints(photoName string) []AccessPointSightingInfo {
 
 		for j := range aps {
 			ap := aps[j]
-			if ap.PowerSecs < timeTaken {
+			if Abs(ap.PowerSecs - timeTaken) < 300 {
 				m[ap.MacAddress] =  AccessPointSightingInfo{
 					MacAddress: formatMac(ap.MacAddress),
 					Age: Abs(ap.PowerSecs - timeTaken) * 1000,
@@ -116,6 +119,8 @@ func (c PoweredCycle) accessPoints(photoName string) []AccessPointSightingInfo {
 func readLine(line string) interface {} {
 
 	elements := strings.Split(strings.Trim(line, " "), ",")
+
+	Trace("Parsing line: %s", elements)
 
 	power_secs := Atoi(elements[0])
 	secs := Atoi(elements[1])

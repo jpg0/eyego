@@ -12,12 +12,16 @@ func EachLine(r io.Reader, f func(string) interface {}) (rv []interface {}, err 
 
 	rv = make([]interface {}, 10)
 
-	for ;err != io.EOF; {
+	for {
 		line, err := br.ReadString('\n')
+
+		if line != "" {
+			rv = append(rv, f(line[:len(line) - 1]))
+		}
+
 		if err != nil {
 			break
 		}
-		rv = append(rv, f(line[:len(line) - 1]))
 	}
 
 	return rv, err
