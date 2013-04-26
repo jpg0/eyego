@@ -88,8 +88,16 @@ func processUpload(mediaFile string, logFile string, soap UploadPhoto) string {
 func move(mediaFile string) (targetFile string, err error) {
 	targetFile = path.Join(Config().TargetDir, path.Base(mediaFile))
 	err = os.Rename(mediaFile, targetFile)
+
+	if err != nil {
+		Info("Failed to move file, falling back to copy [%s]", err)
+		_, err = CopyFile(targetFile, mediaFile)
+	}
+
 	return
 }
+
+
 
 func readString(p *multipart.Part) (s string, err error) {
 	buffer := bytes.NewBuffer(make([]byte, 0))
