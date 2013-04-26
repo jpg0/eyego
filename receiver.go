@@ -74,9 +74,13 @@ func doPhotoUpload(r *http.Request) (s string, err error) {
 func processUpload(mediaFile string, logFile string, soap UploadPhoto) string {
 	mediaFile = geotag(mediaFile, logFile, soap.Filename)
 
-	move(mediaFile)
+	target, err := move(mediaFile)
 
-	Info("Photo %s archived", soap.Filename)
+	if err != nil {
+		panic(err)
+	}
+
+	Info("Photo %s archived to %s", soap.Filename, target)
 
 	return CreateSoap(UploadPhotoResponse{Success:"true"})
 }
