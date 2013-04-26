@@ -66,12 +66,22 @@ func TestSurroundingAP(t *testing.T){
 		t.Fatalf("Expected to find %d access points, found %d", 2, len(aps))
 	}
 
-	if aps[0].MacAddress != "00:23:69:1d:e7:c2" {
-		t.Errorf("Bad mac address, expected 00:23:69:1d:e7:c2, was %s", aps[0].MacAddress)
+	var aps0, aps1 AccessPointSightingInfo
+
+	if aps[0].MacAddress == "00:23:69:1d:e7:c2" {
+		aps0 = aps[0]
+		aps1 = aps[1]
+	} else {
+		aps0 = aps[1]
+		aps1 = aps[0]
 	}
 
-	if aps[1].MacAddress != "00:23:69:1d:e7:c3" {
-		t.Errorf("Bad mac address, expected 00:23:69:1d:e7:c3, was %s", aps[1].MacAddress)
+	if aps0.MacAddress != "00:23:69:1d:e7:c2" {
+		t.Errorf("Bad mac address, expected 00:23:69:1d:e7:c2, was %s", aps0.MacAddress)
+	}
+
+	if aps1.MacAddress != "00:23:69:1d:e7:c3" {
+		t.Errorf("Bad mac address, expected 00:23:69:1d:e7:c3, was %s", aps1.MacAddress)
 	}
 
 
