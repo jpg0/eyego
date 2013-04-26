@@ -36,7 +36,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 	case "/api/soap/eyefilm/v1/upload":
 		Info("Upload started...")
 		var err error
-		err = doPhotoUpload(r)
+		response, err = doPhotoUpload(r)
 		if err != nil {
 			panic(fmt.Sprintf("Upload failed %s", err))
 		}

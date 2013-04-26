@@ -9,11 +9,9 @@ import (
 	"os"
 	"io/ioutil"
 	"path"
-	"os/exec"
-	"strings"
 )
 
-func doPhotoUpload(r *http.Request) (err error) {
+func doPhotoUpload(r *http.Request) (s string, err error) {
 	multipartReader, err := r.MultipartReader()
 
 	if err != nil {
@@ -61,101 +59,26 @@ func doPhotoUpload(r *http.Request) (err error) {
 
 	card := GetCard(soap.MacAddress)
 
-	if integrityDigest != mediaChecksummer(card.MacAddress) {
-		panic("Bad integrity digest")
+	calculatedDigest := mediaChecksummer(card.UploadKey)
+
+	if integrityDigest != calculatedDigest {
+		panic(fmt.Sprintf("Bad integrity digest. Calculated %s, sent %s", calculatedDigest, integrityDigest))
 	} else {
 		Debug("Integrity digest verified ok")
 	}
 
 
-	processUpload(mediaFile, logFile, *soap)
-	return nil
+	return processUpload(mediaFile, logFile, *soap), nil
 }
 
-func processUpload(mediaFile string, logFile string, soap UploadPhoto) {
-	geotag(mediaFile, logFile, soap)
-	move(mediaFile)
-}
-
-func geotag(mediaFile string, logFile string, soap UploadPhoto) string {
-	f, err := os.OpenFile(logFile, os.O_RDONLY, 0)
-	if err != nil {panic(err)}
-	defer f.Close()
-
-	p, err := ParseLog(f)
-	if err != nil {panic(err)}
-
-	aps := p.AccessPoints(soap.Filename)
-
-	if len(aps) > 0 && strings.HasSuffix(strings.ToLower(soap.Filename), ".jpg") {
-		location, err := GPSCoordinates(aps)
-		if err != nil {panic(err)}
-
-		mediaFile = WriteGeotag(mediaFile, location)
-
-		Info("Photo %s geotagged %v:%v", soap.Filename, location.Location.Latitude, location.Location.Longitude)
-	}
+func processUpload(mediaFile string, logFile string, soap UploadPhoto) string {
+	mediaFile = geotag(mediaFile, logFile, soap.Filename)
 
 	move(mediaFile)
 
 	Info("Photo %s archived", soap.Filename)
 
 	return CreateSoap(UploadPhotoResponse{Success:"true"})
-}
-
-func WriteGeotag(mediaFile string, location LocationResult) string {
-	args := []string{
-		"-GPSMapDatum=WGS-84",
-		"-GPSMeasureMode=2",
-		"-GPSVersionID=2 0 0 0"}
-
-
-	lat := location.Location.Latitude
-	if lat != 0 {
-		var latRef string
-		if lat > 0 {
-			latRef = "N"
-		} else {
-			latRef = "S"
-			lat = -lat
-		}
-		args = append(args,
-			fmt.Sprintf("-GPSLatitudeRef=%s", latRef),
-			fmt.Sprintf("-GPSLatitude=%v", lat))
-
-	}
-
-	lon := location.Location.Longitude
-	if lon != 0 {
-		var lonRef string
-		if lon > 0 {
-			lonRef = "E"
-		} else {
-			lonRef = "W"
-			lon = -lon
-		}
-		args = append(args,
-			fmt.Sprintf("-GPSLongitudeRef=%s", lonRef),
-			fmt.Sprintf("-GPSLongitude=%v", lon))
-
-	}
-
-	args = append(args, mediaFile)
-
-	exiftool_location, err := exec.LookPath("exiftool")
-
-	if err != nil {
-		panic("exiftool not found")
-	}
-
-	cmd := exec.Command(exiftool_location, args...)
-	output, err := cmd.CombinedOutput()
-
-	if err != nil {
-		panic(fmt.Sprintf("Failed to run exiftool: %s", output))
-	}
-
-	return mediaFile
 }
 
 func move(mediaFile string) (targetFile string, err error) {
@@ -212,9 +135,9 @@ func writeFiles(r io.Reader) (mediaFile string, mediaChecksum func (string) stri
 		err = out.Close()
 
 		if mediaFile == "" {
-			mediaFile = header.Name
+			mediaFile = fmt.Sprintf("%s/%s", targetDir, header.Name)
 		} else {
-			logFile = header.Name
+			logFile = fmt.Sprintf("%s/%s", targetDir, header.Name)
 		}
 
 		if err != nil {
