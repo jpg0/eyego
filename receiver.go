@@ -72,7 +72,7 @@ func doPhotoUpload(r *http.Request) (s string, err error) {
 }
 
 func processUpload(mediaFile string, logFile string, soap UploadPhoto) string {
-	mediaFile = geotag(mediaFile, logFile, soap.Filename)
+	mediaFile = geotag(mediaFile, logFile, path.Base(mediaFile))
 
 	target, err := move(mediaFile)
 
@@ -161,5 +161,3 @@ func writeFiles(r io.Reader) (mediaFile string, mediaChecksum func (string) stri
 
 	return mediaFile, func(s string) string {return checksumReader.Checksum(s)}, logFile, nil
 }
-
-func wrap()
