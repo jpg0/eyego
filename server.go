@@ -30,6 +30,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 			soap := new(MarkLastPhotoInRoll)
 			ParseSoap(body, soap)
 			response = CreateSoap(MarkLastPhotoInRollResponse{})
+			Info("Upload Roll Complete")
 		default:
 			panic("unknown soap format")
 		}
