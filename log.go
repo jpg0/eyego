@@ -15,7 +15,7 @@ var (
 	WARN = LogLevel{level:3, name:"WARN"}
 	ERROR = LogLevel{level:4, name:"ERROR"}
 
-	levels = []LogLevel{DEBUG,INFO,WARN,ERROR}
+	levels = []LogLevel{TRACE,DEBUG,INFO,WARN,ERROR}
 	level int
 )
 
