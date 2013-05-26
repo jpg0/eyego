@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"strconv"
 	"os"
+	"strings"
 )
 
 func EachLine(r io.Reader, f func(string) interface {}) (rv []interface {}, err error){
@@ -28,7 +29,7 @@ func EachLine(r io.Reader, f func(string) interface {}) (rv []interface {}, err 
 }
 
 func Atoi(s string) (i int) {
-	i, err := strconv.Atoi(s)
+	i, err := strconv.Atoi(strings.Trim(s, "\x00"));
 	if err != nil {
 		panic(err)
 	}
