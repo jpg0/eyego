@@ -31,6 +31,10 @@ func ConfigFrom(path string) {
 	}
 }
 
+func SetConfig(_config EyegoConfig) {
+	config = _config
+}
+
 func Config() EyegoConfig {
 	return config
 }
