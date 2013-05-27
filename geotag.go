@@ -18,7 +18,7 @@ func geotag(mediaFile string, logFile string, originalFilename string) string {
 	aps := p.AccessPoints(originalFilename)
 
 	if strings.HasSuffix(strings.ToLower(mediaFile), ".jpg") {
-		if len(aps) > 0 {
+		if len(aps) > 1 {
 			location, err := GPSCoordinates(aps)
 			if err != nil {panic(err)}
 
@@ -26,7 +26,7 @@ func geotag(mediaFile string, logFile string, originalFilename string) string {
 
 			Info("Photo %s geotagged %v:%v", originalFilename, location.Location.Latitude, location.Location.Longitude)
 		} else {
-			Info("No Access Points logged for %s, skipping geotag.", originalFilename)
+			Info("Insufficient Access Points logged for %s, skipping geotag.", originalFilename)
 		}
 	}
 
