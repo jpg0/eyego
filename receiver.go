@@ -72,7 +72,10 @@ func doPhotoUpload(r *http.Request) (s string, err error) {
 }
 
 func processUpload(mediaFile string, logFile string, soap UploadPhoto) string {
-	mediaFile = geotag(mediaFile, logFile, path.Base(mediaFile))
+
+	if Config().GoogleAPIKey != "" {
+		mediaFile = geotag(mediaFile, logFile, path.Base(mediaFile))
+	}
 
 	target, err := move(mediaFile)
 
