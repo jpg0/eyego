@@ -39,6 +39,10 @@ type AccessPointSightingInfo struct {
 	SNR int `json:"signalToNoiseRatio"`
 }
 
+type UnknownLine struct {
+	Content string
+}
+
 func ParseLog(log io.Reader) (p ParsedLog, err error) {
 	lines, err := EachLine(log, readLine)
 
@@ -71,6 +75,8 @@ func ParseLog(log io.Reader) (p ParsedLog, err error) {
 			cycle = PoweredCycle{
 				Photos: make(map[string] []NewPhoto),
 				AccessPoints: make(map[string] []AccessPointSighting)}
+		case UnknownLine:
+			Trace("Found Unknown Line, ignoring")
 		}
 	}
 
@@ -122,7 +128,13 @@ func readLine(line string) interface {} {
 
 	Trace("Parsing line: %s", elements)
 
-	power_secs := Atoi(elements[0])
+	power_secs, err := strconv.Atoi(strings.Trim(elements[0], "\x00"))
+
+	if (err != nil) {
+		return UnknownLine {
+			Content: line }
+	}
+
 	secs := Atoi(elements[1])
 	args := elements[3:]
 
