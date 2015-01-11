@@ -9,10 +9,32 @@ import (
 	"os"
 	"io/ioutil"
 	"path"
+	"mime"
 )
 
+func teeMultipartReader(r *http.Request) (*multipart.Reader, *bytes.Buffer, error) {
+    v := r.Header.Get("Content-Type")
+
+    if v == "" {
+        return nil, nil, http.ErrNotMultipart
+    }
+    d, params, err := mime.ParseMediaType(v)
+    if err != nil || d != "multipart/form-data" {
+        return nil, nil, http.ErrNotMultipart
+    }
+    boundary, ok := params["boundary"]
+    if !ok {
+        return nil, nil, http.ErrMissingBoundary
+    }
+
+		var buffer bytes.Buffer
+		teeReader := io.TeeReader(r.Body, &buffer)
+
+    return multipart.NewReader(teeReader, boundary),  &buffer, nil
+}
+
 func doPhotoUpload(r *http.Request) (s string, err error) {
-	multipartReader, err := r.MultipartReader()
+	multipartReader, buffer, err := teeMultipartReader(r)
 
 	if err != nil {
 		return
@@ -29,6 +51,7 @@ func doPhotoUpload(r *http.Request) (s string, err error) {
 			break
 		} else if err2 != nil {
 			LogError("Failed MIME parsing: %s", err2)
+			Debug("%s", buffer.String())
 			return
 		}
 
