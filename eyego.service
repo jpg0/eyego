@@ -1,0 +1,16 @@
+[Unit]
+Description=eyego EyeFi image downloader
+
+[Service]
+
+Environment="conf_file=/etc/eyego.conf" "log_level=DEBUG" "log_file=/var/log/eyego.log"
+
+Restart=on-failure
+
+#User=jpg
+#Group=jpg
+
+ExecStart=/usr/local/bin/eyego -logfile "$log_file" -loglevel "$log_level" -conf "$conf_file"
+
+[Install]
+WantedBy=multi-user.target
