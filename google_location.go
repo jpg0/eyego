@@ -15,6 +15,7 @@ var (
 
 type WifiAccessPoints struct {
 	AccessPoints []AccessPointSightingInfo `json:"wifiAccessPoints"`
+	ConsiderIp bool `json:"considerIp"`
 }
 
 type Location struct {
@@ -30,7 +31,7 @@ type LocationResult struct {
 
 func GPSCoordinates(aps []AccessPointSightingInfo) (lr LocationResult, err error) {
 
-	req, err := json.Marshal(WifiAccessPoints{AccessPoints:aps})
+	req, err := json.Marshal(WifiAccessPoints{AccessPoints:aps,ConsiderIp:false})
 	if err != nil { return }
 
 	resp, err := http.Post(fmt.Sprintf("%s?key=%s", LOC_BASE_URL, Config().GoogleAPIKey), "application/json", bytes.NewBuffer(req))
